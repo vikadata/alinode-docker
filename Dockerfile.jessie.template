@@ -19,6 +19,7 @@ RUN curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_V
 
 COPY ./default.config.js $HOME
 COPY ./start-agenthub.sh /
+RUN chmod u+x /start-agenthub.sh
 
 ENV YARN_VERSION YARN_VERSION_STRING
 
