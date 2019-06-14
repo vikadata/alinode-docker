@@ -27,6 +27,7 @@ RUN set -x \
 
 COPY ./default.config.js $HOME
 COPY ./start-agenthub.sh /
+RUN chmod u+x /start-agenthub.sh
 
 ENV YARN_VERSION 1.12.3
 
