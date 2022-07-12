@@ -36,3 +36,6 @@ Temporary Items
 Session.vim
 .netrwhist
 *~
+
+.idea
+.vscode
