@@ -4,12 +4,18 @@ RUN groupadd --gid 1000 node \
   && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 
 ENV ALINODE_VERSION 7.6.0
-ENV ARCH=x64
 ENV ENABLE_NODE_LOG YES
 ENV NODE_LOG_DIR /tmp
 ENV HOME /root
 
-RUN curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" \
+RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
+  && case "${dpkgArch##*-}" in \
+    amd64) ARCH='x64';; \
+    arm64) ARCH='arm64';; \
+    *) echo "unsupported architecture"; exit 1 ;; \
+  esac \
+  # 使用上面获取的架构来编译
+  && curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" \
   && curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/SHASUMS256.txt" \
   && grep " alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz\$" SHASUMS256.txt | sha256sum -c - \
   && tar -zxf "alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" -C /usr/local --strip-components=1 --no-same-owner \
@@ -27,9 +33,8 @@ RUN set -ex \
   && for key in \
     6A010C5166006599AA17F08146C2130DFD2497F5 \
   ; do \
-    gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
-    gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
-    gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$key" || \
+    gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key" ; \
   done \
   && curl -fsSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz" \
   && curl -fsSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc" \
@@ -41,4 +46,3 @@ RUN set -ex \
   && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz
 
 ENTRYPOINT ["/start-agenthub.sh"]
-

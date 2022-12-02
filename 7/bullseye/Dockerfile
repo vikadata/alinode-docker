@@ -1,4 +1,4 @@
-FROM buildpack-deps:stretch
+FROM buildpack-deps:bullseye
 
 RUN groupadd --gid 1000 node \
   && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
@@ -8,12 +8,20 @@ ENV ENABLE_NODE_LOG YES
 ENV NODE_LOG_DIR /tmp
 ENV HOME /root
 
-RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
-  && case "${dpkgArch##*-}" in \
-    amd64) ARCH='x64';; \
-    arm64) ARCH='arm64';; \
-    *) echo "unsupported architecture"; exit 1 ;; \
-  esac \
+RUN apt-get update \
+  && apt-get -y --force-yes install \
+      build-essential \
+      libcairo2-dev \
+      libpango1.0-dev \
+      libjpeg-dev \
+      libgif-dev \
+      librsvg2-dev \
+  && ARCH= && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch##*-}" in \
+      amd64) ARCH='x64';; \
+      arm64) ARCH='arm64';; \
+      *) echo "unsupported architecture"; exit 1 ;; \
+    esac \
   # 使用上面获取的架构来编译
   && curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" \
   && curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/SHASUMS256.txt" \
