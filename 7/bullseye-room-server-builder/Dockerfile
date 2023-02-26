@@ -29,9 +29,25 @@ RUN apt-get update \
   && tar -zxf "alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" -C /usr/local --strip-components=1 --no-same-owner \
   && rm "alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" SHASUMS256.txt \
   && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-  && ENABLE_NODE_LOG=NO npm install -g @alicloud/agenthub \
-  # Install rust toolchain
-  && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly --profile minimal -y
+  && ENABLE_NODE_LOG=NO npm install -g @alicloud/agenthub
+
+# Install rust toolchain (nightly)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly --profile minimal -y
+
+ENV PATH="$HOME/.cargo/bin:$PATH"
+
+  # Install arm64 target for Rust
+RUN rustup target add aarch64-unknown-linux-gnu
+
+# Install zig for linking
+RUN wget -qO- https://ziglang.org/download/0.10.1/zig-linux-x86_64-0.10.1.tar.xz | tar -xJf - -C /opt
+
+ENV PATH="/opt/zig-linux-x86_64-0.10.1:$PATH"
+
+# Add arm64 toolchain
+RUN dpkg --add-architecture arm64 \
+  && apt-get update \
+  && apt-get install --assume-yes crossbuild-essential-arm64
 
 COPY ./default.config.js $HOME
 COPY ./start-agenthub.sh /
@@ -55,6 +71,5 @@ RUN set -ex \
   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg \
   && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz
 
-ENV PATH="$HOME/.cargo/bin:$PATH"
 
 ENTRYPOINT ["/start-agenthub.sh"]
